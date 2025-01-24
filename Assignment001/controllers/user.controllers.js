@@ -60,9 +60,24 @@ const loginUser = async (req, res) => {
 const deleteUser = async (req, res) => {
 
     //getting the email since each user has a unique email.
-    const { email } = req.body;
+    const { password, email } = req.body;
 
     try {
+        //authentication steps to ensure it is the main user
+        //ensuring the user provides complete and valid credentials
+        if (!email || !password) { return res.json({ message: " Invalid/missing credentials" }) };
+
+        //checking if user with the email provided exists
+        const trueUser = await userModel.findOne({ email })
+        if (!trueUser) { return res.json({ message: "The email provided is not associated with any account. Would you like to create an account with us?" }) }
+
+        //verifying the password
+        //this next line compares the password provided from the frontend and the password already stored in the database
+        const isPasswordValid = bcrypt.compareSync(password, trueUser.password)
+
+        if (!isPasswordValid) { return res.json({ message: "Incorrect password" }) };
+        //the idea for this delete is that only someone who is successfully logged in or provides valid credentials is allowed to delete the account
+
         //finds the unique user associated to the email from the database and deletes it
         await userModel.findOneAndDelete({ email })
         res.send("Account successfully deleted")
